@@ -1,9 +1,17 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
+const cors = require('cors');
+const { v4: uuidv4 } = require('uuid');
 
 const app = express();
 const server = http.createServer(app);
+
+app.use(cors({
+    origin: 'http://localhost:5173', // Autorisez votre client
+    methods: ['GET', 'POST'],
+    credentials: true,
+  }));
 
 const io = new Server(server, {
     cors: {
@@ -170,6 +178,12 @@ function resetBall(ball, vx) {
     ball.vx = vx;
     ball.vy = 5;
 }
+
+app.get('/create-room', (req, res) => {
+    const roomId = uuidv4(); // Génère un identifiant unique
+    rooms[roomId] = createGame(roomId);
+    res.json({ roomId });
+  });
 
 // Démarrer le serveur
 server.listen(PORT, () => {

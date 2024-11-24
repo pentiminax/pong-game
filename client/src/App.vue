@@ -1,8 +1,14 @@
 <template>
   <div id="app">
     <div v-if="!gameStarted && !waiting && !opponentDisconnected">
+      <button @click="createRoom">Créer un salon</button>
       <input v-model="roomId" placeholder="ID du salon" />
       <button @click="joinRoom">Rejoindre le salon</button>
+    </div>
+
+    <div v-if="roomCreated && !gameStarted && !waiting">
+      <p>Salon créé avec succès ! ID du salon : {{ roomId }}</p>
+      <p>En attente d'un autre joueur...</p>
     </div>
 
     <div v-if="waiting">
@@ -32,6 +38,7 @@ export default defineComponent({
 
     // Références pour le jeu
     const roomId = ref('');
+    const roomCreated = ref(false);
     const playerNumber = ref(0);
     const waiting = ref(false);
     const gameStarted = ref(false);
@@ -44,6 +51,17 @@ export default defineComponent({
     const paddleY = ref(150);
     const moveUp = ref(false);
     const moveDown = ref(false);
+
+    const createRoom = async () => {
+      try {
+        const response = await axios.get('http://localhost:3000/create-room');
+        roomId.value = response.data.roomId;
+        roomCreated.value = true;
+        joinRoom();
+      } catch (error) {
+        console.error('Erreur lors de la création du salon:', error);
+      }
+    };
 
     // Rejoindre un salon
     const joinRoom = () => {
@@ -130,6 +148,7 @@ export default defineComponent({
     return {
       roomId,
       joinRoom,
+      roomCreated,
       waiting,
       gameStarted,
       opponentDisconnected,

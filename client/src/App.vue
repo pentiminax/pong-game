@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <div v-if="!gameStarted && !waiting && !opponentDisconnected">
+    <div v-if="!gameStarted && !waiting && !opponentDisconnected && !roomCreated">
       <button @click="createRoom">Créer un salon</button>
       <input v-model="roomId" placeholder="ID du salon" />
       <button @click="joinRoom">Rejoindre le salon</button>
@@ -28,7 +28,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, onMounted, onBeforeUnmount } from 'vue';
+import { defineComponent, ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
 import { io } from 'socket.io-client';
 import { renderGame } from './render';
 import axios from 'axios';
@@ -53,6 +53,10 @@ export default defineComponent({
     const moveUp = ref(false);
     const moveDown = ref(false);
 
+    const socketId = ref('');
+    let renderInterval: number | undefined;
+
+    // Fonction pour créer un salon
     const createRoom = async () => {
       try {
         const response = await axios.get('http://localhost:3000/create-room');
@@ -64,7 +68,7 @@ export default defineComponent({
       }
     };
 
-    // Rejoindre un salon
+    // Fonction pour rejoindre un salon
     const joinRoom = () => {
       socket.emit('join_room', roomId.value);
     };
@@ -101,6 +105,10 @@ export default defineComponent({
       window.addEventListener('keydown', handleKeyDown);
       window.addEventListener('keyup', handleKeyUp);
 
+      socket.on('connect', () => {
+        socketId.value = socket.id;
+      });
+
       socket.on('player_number', (num: number) => {
         playerNumber.value = num;
       });
@@ -129,27 +137,39 @@ export default defineComponent({
         opponentDisconnected.value = true;
         gameStarted.value = false;
       });
+    });
 
-      const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
-
-      const renderInterval = setInterval(() => {
-        if (gameStarted.value) {
-          renderGame(canvas, ball, paddles, paddleY, playerNumber);
-          updatePaddle();
+    // Surveiller le changement de gameStarted
+    watch(gameStarted, async (newValue) => {
+      if (newValue) {
+        await nextTick(); // Attendre que le DOM se mette à jour
+        const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
+        if (canvas) {
+          renderInterval = window.setInterval(() => {
+            renderGame(canvas, ball, paddles, paddleY, playerNumber, socketId);
+            updatePaddle();
+          }, 16);
         }
-      }, 16);
+      } else {
+        // Arrêter la boucle de rendu si le jeu est terminé ou arrêté
+        if (renderInterval) {
+          clearInterval(renderInterval);
+        }
+      }
+    });
 
-      onBeforeUnmount(() => {
+    onBeforeUnmount(() => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+      if (renderInterval) {
         clearInterval(renderInterval);
-        window.removeEventListener('keydown', handleKeyDown);
-        window.removeEventListener('keyup', handleKeyUp);
-      });
+      }
     });
 
     return {
       roomId,
-      joinRoom,
       createRoom,
+      joinRoom,
       roomCreated,
       waiting,
       gameStarted,
@@ -159,17 +179,33 @@ export default defineComponent({
       scores,
       paddleY,
       playerNumber,
+      socketId, // Ajouté pour être accessible dans renderGame
     };
   },
 });
 </script>
 
 <style scoped>
-body {
+#app {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   font-family: Arial, sans-serif;
 }
 
 #gameCanvas {
-  border: 1px solid #000;
+  border: 2px solid #000;
+  background-color: #f0f0f0;
+}
+
+button {
+  margin: 5px;
+  padding: 10px 20px;
+}
+
+input {
+  padding: 10px;
+  margin: 5px;
+  width: 200px;
 }
 </style>

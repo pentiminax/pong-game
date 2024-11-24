@@ -31,6 +31,7 @@
 import { defineComponent, ref, onMounted, onBeforeUnmount } from 'vue';
 import { io } from 'socket.io-client';
 import { renderGame } from './render';
+import axios from 'axios';
 
 export default defineComponent({
   setup() {
@@ -148,6 +149,7 @@ export default defineComponent({
     return {
       roomId,
       joinRoom,
+      createRoom,
       roomCreated,
       waiting,
       gameStarted,

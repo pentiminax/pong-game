@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Pong Multijoueur</title>
+    <script type="module" src="/src/main.ts"></script>
+  </head>
+  <body>
+    <div id="app">
+      <div v-if="!gameStarted && !waiting && !opponentDisconnected">
+        <input v-model="roomId" placeholder="ID du salon" />
+        <button @click="joinRoom">Rejoindre le salon</button>
+      </div>
+
+      <div v-if="waiting">
+        <p>En attente d'un autre joueur...</p>
+      </div>
+
+      <div v-if="opponentDisconnected">
+        <p>Adversaire déconnecté</p>
+      </div>
+
+      <div v-if="gameStarted">
+        <canvas id="gameCanvas" width="600" height="400"></canvas>
+        <p>Score Joueur 1: {{ scores.player1 }}</p>
+        <p>Score Joueur 2: {{ scores.player2 }}</p>
+      </div>
+    </div>
+  </body>
+</html>

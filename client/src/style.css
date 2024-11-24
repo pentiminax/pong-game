@@ -1,0 +1,7 @@
+body {
+  font-family: Arial, sans-serif;
+}
+
+#gameCanvas {
+  border: 1px solid #000;
+}

@@ -106,7 +106,9 @@ export default defineComponent({
       window.addEventListener('keyup', handleKeyUp);
 
       socket.on('connect', () => {
-        socketId.value = socket.id;
+        if (socket.id) {
+          socketId.value = socket.id;
+        }
       });
 
       socket.on('player_number', (num: number) => {
